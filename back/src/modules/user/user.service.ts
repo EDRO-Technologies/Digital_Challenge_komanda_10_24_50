@@ -1020,17 +1020,25 @@ export const getRecomendation = async (userUid: string) => {
       .from(userProfleInfo)
       .where(eq(userProfleInfo.userUid, userUid));
     const events = await db
-      .select()
+      .select({
+        uid: event.uid,
+        name: event.name,
+        type: event.type,
+        image: event.image,
+        userName: users.fullName,
+        description: event.description,
+        categoryId: event.categoryId,
+      })
       .from(event)
       .where(
-        and(
-          arrayContains(event.categoryId, [profleInfo[0].chosenCategory]),
-          or(
-            ne(event.status, StatusEnum.END),
-            ne(event.status, StatusEnum.CLOSED)
-          )
-        )
-      );
+        arrayContains(event.categoryId, [profleInfo[0].chosenCategory])
+        // or(
+        //   ne(event.status, StatusEnum.END),
+        //   ne(event.status, StatusEnum.CLOSED)
+        // )
+      )
+      .leftJoin(users, eq(users.uid, event.userUid));
+
     return events;
   } catch (error) {
     throw error;
