@@ -12,6 +12,7 @@ import type {
 } from './dto/create-user.dto';
 import type { AddFileDto } from './dto/add-file.dto';
 import { EditFileDto } from './dto/edit-file.dto';
+import { CreateRoadmapDto } from './dto/roadmap.dto';
 
 // export async function getCompany(
 //     req: Request<{ query: string }>,
@@ -25,6 +26,20 @@ import { EditFileDto } from './dto/edit-file.dto';
 //         next(error);
 //     }
 // }
+
+export async function getSkills(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await userService.getSkillsList();
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
 
 export async function getUserProfile(
   req: Request<{ tag: string }>,
@@ -233,6 +248,61 @@ export async function deleteFile(
 ) {
   try {
     const result = await userService.deleteFile(req.user.uid, req.params.uid);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function generateRoadmap(
+  req: Request<{}, {}, CreateRoadmapDto>,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await userService.generateRoadmap(req.user.uid, req.body);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getRecomendateEvents(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await userService.getRecomendation(req.user.uid);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+export async function getRoadmap(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await userService.getRoadmap(req.user.uid);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateRoadmap(
+  req: Request<{ checkUid: string }>,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await userService.updateCheck(req.params.checkUid);
+
     return res.status(200).json(result);
   } catch (error) {
     next(error);

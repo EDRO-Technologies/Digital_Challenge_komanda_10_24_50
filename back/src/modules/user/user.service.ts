@@ -22,13 +22,18 @@ import {
   userFiles,
   userLocation,
   userProfleInfo,
+  userRoadmap,
   users,
   userSkills,
 } from '@/db/drizzle/schema/user/schema';
-import { and, eq, ilike, or } from 'drizzle-orm';
+import { and, arrayContains, eq, ilike, ne, or } from 'drizzle-orm';
 import type { AddFileDto } from './dto/add-file.dto';
 import { EditFileDto } from './dto/edit-file.dto';
 import { skillPool } from '@/db/drizzle/schema/testing/schema';
+import { CreateRoadmapDto } from './dto/roadmap.dto';
+import { GigaChat } from 'gigachat-node';
+import { event } from '@/db/drizzle/schema/event/schema';
+import { StatusEnum } from '@/db/drizzle/schema/event/enums/status.enum';
 
 export const getUserByUID = async (uid: string) => {
   try {
@@ -185,6 +190,7 @@ export const getUserProfile = async (tag: string) => {
         direction: userEducation.direction,
         startDate: userEducation.startDate,
         endDate: userEducation.endDate,
+        format: userEducation.format,
       })
       .from(userEducation)
       .where(eq(userEducation.profileInfoUid, profileInfo[0].uid));
@@ -192,10 +198,12 @@ export const getUserProfile = async (tag: string) => {
     const skills = await db
       .select({
         uid: userSkills.uid,
-        name: userSkills.level,
+        level: userSkills.level,
+        name: skillPool.name,
       })
       .from(userSkills)
-      .where(eq(userSkills.profileInfoUid, profileInfo[0].uid));
+      .where(eq(userSkills.profileInfoUid, profileInfo[0].uid))
+      .leftJoin(skillPool, eq(skillPool.uid, userSkills.skillUid));
 
     const location = await db
       .select({
@@ -455,6 +463,19 @@ export const createExperience = async (
     if (error.statusCode === HttpStatus.INTERNAL_SERVER_ERROR) {
       throw new CustomError(HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    throw error;
+  }
+};
+
+export const getSkillsList = async () => {
+  try {
+    return await db
+      .select({
+        uid: skillPool.uid,
+        name: skillPool.name,
+      })
+      .from(skillPool);
+  } catch (error) {
     throw error;
   }
 };
@@ -890,6 +911,128 @@ export const deleteFile = async (userUid: string, uid: string) => {
     if (error.statusCode === HttpStatus.INTERNAL_SERVER_ERROR) {
       throw new CustomError(HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    throw error;
+  }
+};
+
+export const generateRoadmap = async (
+  userUid: string,
+  dto: CreateRoadmapDto
+) => {
+  try {
+    const gigachat = new GigaChat(
+      'YzdmYmZkYjMtNzgyNS00MTAzLTkxM2QtOTY0ZTdmZmNlZWZkOjlhNjdiZTJkLTVjNTItNDAzOC05MWRiLTc2NGIzMTUzY2UwZQ==',
+      true,
+      true,
+      true
+    );
+
+    const prompt =
+      'Вы IT-специалист, который хочет составить персонализированный чеклист навыков и задач (роудмап) для профессионального роста. На основе следующих вопросов и списка интересующих вас навыков, создайте JSON-структуру чеклиста, включающую пункты для изучения, выполнения или освоения. Каждый элемент чеклиста должен быть описан как объект, включающий следующие ключи: - `name` — краткое название пункта чеклиста. Ответ должен строго соответствовать указанному ниже формату. Никакой дополнительной информации, комментариев или текста в ответе быть не должно. Сгенерируйте JSON-объект чеклиста на основе ответов пользователя. Формат результата: ' +
+      'список объектов с name: string' +
+      '. Ограничение: Формат ответа должен быть ТОЛЬКО такой как в примере.' +
+      '. Ограничение: Ответ не должен содержать: Никаких пояснений или текста вне JSON. Никаких дополнительных объектов или свойств, кроме указанных в примере. Никаких символов, не соответствующих стандарту JSON. Вот json вопросов-ответов: ' +
+      JSON.stringify(dto.testResult) +
+      '. Вот json выбранных желаемых навыков(он может быть пустым): ' +
+      JSON.stringify(dto.interestedIn) +
+      ' ПРИНИМАЙ ВО ВНИМАНИЕ И ЖЕЛАЕМЫЕ НАВЫКИ И ОТВЕТЫ НА ВОПРОСЫ. ДЕЛАЙ КОМПЛЕКСНЫЙ АНАЛИЗ, КОТОРЫЙ ПОМОЖЕТ ЧЕЛОВЕКУ ВЫРАСТИ ПРОФЕССИОНАЛЬНО' +
+      ' НЕ воспринимай пример буквально!!!';
+
+    await gigachat.createToken();
+    const response = await gigachat.completion({
+      model: 'GigaChat',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const data = JSON.parse(
+      response.choices[0].message.content.replace(/```json|```/g, '').trim()
+    );
+    if (!data.hasOwnProperty('checklist')) {
+      throw new CustomError(HttpStatus.I_AM_A_TEAPOT, 'Попробуйте снова');
+    }
+    const profileInfo = await db
+      .select()
+      .from(userProfleInfo)
+      .where(eq(userProfleInfo.userUid, userUid));
+    await db
+      .delete(userRoadmap)
+      .where(eq(userRoadmap.profileInfoUid, profileInfo[0].uid));
+    for (let index = 0; index < data.checklist.length; index++) {
+      const element = data.checklist[index];
+      await db.insert(userRoadmap).values({
+        profileInfoUid: profileInfo[0].uid,
+        name: element.name,
+        order: index,
+      });
+    }
+    await db
+      .update(userProfleInfo)
+      .set({ chosenCategory: dto.chosenCategory })
+      .where(eq(userProfleInfo.userUid, userUid));
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getRoadmap = async (userUid: string) => {
+  try {
+    const profleInfo = await db
+      .select()
+      .from(userProfleInfo)
+      .where(eq(userProfleInfo.userUid, userUid));
+    const roadmap = await db
+      .select({
+        uid: userRoadmap.uid,
+        name: userRoadmap.name,
+        order: userRoadmap.order,
+        done: userRoadmap.done,
+      })
+      .from(userRoadmap)
+      .where(eq(userRoadmap.profileInfoUid, profleInfo[0].uid))
+      .orderBy(userRoadmap.order);
+
+    return roadmap;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateCheck = async (checkUid: string) => {
+  try {
+    const data = await db
+      .select()
+      .from(userRoadmap)
+      .where(eq(userRoadmap.uid, checkUid));
+    await db
+      .update(userRoadmap)
+      .set({ done: !data[0].done })
+      .where(eq(userRoadmap.uid, checkUid))
+      .execute();
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getRecomendation = async (userUid: string) => {
+  try {
+    const profleInfo = await db
+      .select()
+      .from(userProfleInfo)
+      .where(eq(userProfleInfo.userUid, userUid));
+    const events = await db
+      .select()
+      .from(event)
+      .where(
+        and(
+          arrayContains(event.categoryId, [profleInfo[0].chosenCategory]),
+          or(
+            ne(event.status, StatusEnum.END),
+            ne(event.status, StatusEnum.CLOSED)
+          )
+        )
+      );
+    return events;
+  } catch (error) {
     throw error;
   }
 };

@@ -8,6 +8,7 @@ import {
   unique,
   pgEnum,
   uuid,
+  integer,
 } from 'drizzle-orm/pg-core';
 import { baseSchema } from '../base.schema';
 import { RoleEnum } from '@/db/drizzle/schema/user/enums/role.enum';
@@ -137,6 +138,7 @@ export const userProfleInfo = pgTable(
     status: varchar('status', { length: 255 }).default('').notNull(),
     about: varchar('about', { length: 255 }).default('').notNull(),
     userUid: uuid('user_uid').references(() => users.uid),
+    chosenCategory: integer('chosen_category'),
     // userEducationUid: varchar("user_education_uid", { length: 255 }),
     // userLocationUid: varchar("user_location_uid", { length: 255 }),
   },
@@ -242,3 +244,15 @@ export const userExperience = pgTable(
 );
 
 export type ExpInferInsert = typeof userExperience.$inferInsert;
+
+export const userRoadmap = pgTable('user_roadmap', {
+  ...baseSchema,
+  name: varchar('name', { length: 255 }).notNull(),
+  order: integer('order').notNull(),
+  done: boolean('done')
+    .notNull()
+    .$default(() => false),
+  profileInfoUid: uuid('profile_info_uid')
+    .references(() => userProfleInfo.uid)
+    .notNull(),
+});

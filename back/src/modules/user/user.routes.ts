@@ -5,6 +5,8 @@ const router = Router();
 
 // router.get("/find/:query", isAuthenticated, userController.getCompany);
 // router.get("/find-user/:tag", isAuthenticated, userControl-ler.findUserTag);
+router.get('/roadmap', isAuthenticated, userController.getRoadmap);
+router.get('/rec', isAuthenticated, userController.getRecomendateEvents);
 router.get('/profile/all/:tag', isAuthenticated, userController.getUserProfile);
 router.get(
   '/profile/experience',
@@ -18,10 +20,17 @@ router.get(
 );
 router.get('/profile/info', isAuthenticated, userController.getUserProfileInfo);
 router.get('/profile/skills', isAuthenticated, userController.getUserSkills);
+router.get('/skill-pool', isAuthenticated, userController.getSkills);
 router.get(
   '/profile/security',
   isAuthenticated,
   userController.getUserSecurity
+);
+
+router.post(
+  '/generate-roadmap',
+  isAuthenticated,
+  userController.generateRoadmap
 );
 
 router.post(
@@ -38,6 +47,11 @@ router.post(
 router.post('/profile-file', isAuthenticated, userController.addFile);
 // router.post("/friend-add/:tag", isAuthenticated, userController.addFriend);
 
+router.patch(
+  '/roadmap/:checkUid',
+  isAuthenticated,
+  userController.updateRoadmap
+);
 router.patch('/profile', isAuthenticated, userController.updateUser);
 router.patch('/profile-expe', isAuthenticated, userController.updateUserExp);
 router.patch(

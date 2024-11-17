@@ -36,7 +36,7 @@ services:
   express-app:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -54,6 +54,6 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: redis_secret
-      NODE_ENV: dev
-    command: sh -c "yarn --ignore-engines && yarn generate && yarn migrate && yarn dev"
-    # command: sh -c "yarn migrate:prod && node /var/www/dist/main.js"
+      NODE_ENV: prod
+    command: sh -c "yarn --ignore-engines && yarn generate && yarn migrate && yarn seed && yarn dev"
+    # command: sh -c "yarn migrate:prod && yarn seed && node /var/www/dist/main.js"

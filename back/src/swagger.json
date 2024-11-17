@@ -25,11 +25,15 @@
       "description": "Team related endpoints"
     },
     {
-      "name": "Testing",
+      "name": "Test",
       "description": "Testing related endpoints"
+    },
+    {
+      "name": "Event",
+      "description": "Event related endpoints"
     }
   ],
-  "schemes": ["http"],
+  "schemes": ["http", "https"],
   "paths": {
     "/auth/register": {
       "post": {
@@ -125,28 +129,17 @@
         }
       }
     },
-    "/user/find/{query}": {
+    "/user/skill-pool": {
       "get": {
         "tags": ["User"],
-        "summary": "Поиск компании",
-        "description": "Ищет компанию по указанному запросу.",
         "security": [
           {
             "api_key": []
           }
         ],
-        "parameters": [
-          {
-            "name": "query",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "description": "Строка запроса для поиска компании."
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Результаты поиска компании."
+            "description": "Список skills успешно получен."
           },
           "401": {
             "description": "Неавторизованный доступ."
@@ -157,34 +150,38 @@
         }
       }
     },
-    "/user/find-user/{tag}": {
+    "/user/roadmap": {
       "get": {
         "tags": ["User"],
-        "summary": "Поиск пользователя по тегу НЕ РАБОТАЕТ!!!!!!!!!!!!",
-        "description": "Ищет пользователя по указанному тегу.",
         "security": [
           {
             "api_key": []
           }
         ],
-        "parameters": [
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Неавторизованный доступ."
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера."
+          }
+        }
+      }
+    },
+    "/user/rec": {
+      "get": {
+        "tags": ["User"],
+        "security": [
           {
-            "name": "tag",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "description": "Тег пользователя для поиска."
+            "api_key": []
           }
         ],
         "responses": {
           "200": {
-            "description": "Пользователь найден.",
-            "schema": {
-              "$ref": "#/definitions/ApiResponse"
-            }
-          },
-          "404": {
-            "description": "Пользователь не найден."
+            "description": ""
           },
           "401": {
             "description": "Неавторизованный доступ."
@@ -563,6 +560,40 @@
         }
       }
     },
+    "/user/generate-roadmap": {
+      "post": {
+        "tags": ["User"],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "roadmap",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateRoadmapDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Roadmap experience created successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/user/profile-experience": {
       "post": {
         "tags": ["User"],
@@ -719,6 +750,36 @@
           },
           "409": {
             "description": "Друг уже в списке друзей."
+          },
+          "401": {
+            "description": "Неавторизованный доступ."
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера."
+          }
+        }
+      }
+    },
+    "/user/roadmap/{checkUid}": {
+      "patch": {
+        "tags": ["User"],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "checkUid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Тег пользователя для поиска."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
           },
           "401": {
             "description": "Неавторизованный доступ."
@@ -1441,30 +1502,9 @@
         }
       }
     },
-    "/test/skill-pool": {
-      "get": {
-        "tags": ["Test"],
-        "security": [
-          {
-            "api_key": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Список skills успешно получен."
-          },
-          "401": {
-            "description": "Неавторизованный доступ."
-          },
-          "500": {
-            "description": "Внутренняя ошибка сервера."
-          }
-        }
-      }
-    },
     "/test/generate": {
       "post": {
-        "tags": ["Testing"],
+        "tags": ["Test"],
         "security": [
           {
             "api_key": []
@@ -1483,6 +1523,134 @@
         "responses": {
           "200": {
             "description": "Тест успешно создана."
+          }
+        }
+      }
+    },
+    "/event/all": {
+      "get": {
+        "tags": ["Event"],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/event/requests/all": {
+      "get": {
+        "tags": ["Event"],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/event/info/{eventUid}": {
+      "get": {
+        "tags": ["Event"],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventUid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "eventUid "
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/event/request/{requestUid}": {
+      "get": {
+        "tags": ["Event"],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "requestUid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "requestUid "
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/event/create/request": {
+      "post": {
+        "tags": ["Event"],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "test",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateRequestDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event успешно создана."
+          }
+        }
+      }
+    },
+    "/event/make/desicion": {
+      "post": {
+        "tags": ["Event"],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "test",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/MakeDecisions"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event успешно создана."
           }
         }
       }
@@ -1578,9 +1746,12 @@
     "CreateSkillsDto": {
       "type": "object",
       "properties": {
-        "name": {
+        "skillUid": {
           "type": "string",
-          "description": "Название навыка"
+          "description": "Uid навыка"
+        },
+        "level": {
+          "type": "string"
         }
       },
       "required": ["name"]
@@ -1968,13 +2139,105 @@
     "GenerateTestDto": {
       "type": "object",
       "properties": {
-        "skillsUid": {
-          "type": "array",
-          "items": {
-            "type": "string"
+        "category": {
+          "type": "number"
+        }
+      }
+    },
+    "CreateRequestDto": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "image": {
+          "type": "object",
+          "description": "Информация об изображении команды",
+          "properties": {
+            "uid": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+
+            "fileUrl": {
+              "type": "string"
+            },
+            "thumbnailUrl": {
+              "type": "string"
+            }
           }
         },
-        "category": {
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "items": {
+            "type": "string",
+            "enum": ["HACKATON", "MEETUP"]
+          }
+        },
+        "registrationEnd": {
+          "type": "string",
+          "format": "date"
+        },
+        "end": {
+          "type": "string",
+          "format": "date"
+        },
+        "categoryId": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "MakeDecisions": {
+      "type": "object",
+      "properties": {
+        "requestUid": {
+          "type": "string"
+        },
+        "decision": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CreateRoadmapDto": {
+      "type": "object",
+      "properties": {
+        "testResult": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": {
+                "type": "string"
+              },
+              "answer": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "interestedIn": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "uid": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "chosenCategory": {
           "type": "number"
         }
       }

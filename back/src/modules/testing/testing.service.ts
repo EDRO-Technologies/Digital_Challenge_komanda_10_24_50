@@ -8,19 +8,6 @@ import {
 import { eq } from 'drizzle-orm';
 import { userProfleInfo, userSkills } from '@/db/drizzle/schema/user/schema';
 
-export const getSkillsList = async () => {
-  try {
-    return await db
-      .select({
-        uid: skillPool.uid,
-        name: skillPool.name,
-      })
-      .from(skillPool);
-  } catch (error) {
-    throw error;
-  }
-};
-
 export const generateTest = async (userUid: string, dto: GenerateTestDto) => {
   try {
     const profileInfo = await db
@@ -28,31 +15,30 @@ export const generateTest = async (userUid: string, dto: GenerateTestDto) => {
       .from(userProfleInfo)
       .where(eq(userProfleInfo.userUid, userUid));
     const categoryQuestionList = await db
-      .select()
+      .select({
+        questionBody: categoryQuestions.question,
+        answers: categoryQuestions.answers,
+      })
       .from(categoryQuestions)
       .where(eq(categoryQuestions.categoryId, dto.category));
 
     const skillQuestions = [];
-    for (const skillUid of dto.skillsUid) {
+    const skills = await db
+      .select()
+      .from(userSkills)
+      .where(eq(userSkills.profileInfoUid, profileInfo[0].uid));
+    for (const skill of skills) {
       const question = await db
         .select({
           questionBody: questionPool.question,
           answers: questionPool.answers,
         })
         .from(questionPool)
-        .where(eq(questionPool.skillUid, skillUid));
-      skillQuestions.push(question);
-
-      await db.insert(userSkills).values({
-        profileInfoUid: profileInfo[0].uid,
-        skillUid,
-      });
+        .where(eq(questionPool.skillUid, skill.skillUid));
+      skillQuestions.push(question[0]);
     }
 
-    return {
-      ...categoryQuestionList,
-      ...skillQuestions,
-    };
+    return [...categoryQuestionList, ...skillQuestions];
   } catch (error) {
     throw error;
   }

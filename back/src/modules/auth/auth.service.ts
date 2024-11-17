@@ -188,7 +188,7 @@ export const oAuth = async (code: string, type: OAuthEnum) => {
         fullName: userData.data.first_name + ' ' + userData.data.last_name,
         mail: userData.data.default_email,
         phone: userData.data.default_phone.number,
-        birthDate: userData.data.birthday,
+        birthDate: '2024-01-01',
       });
       return data;
     }
